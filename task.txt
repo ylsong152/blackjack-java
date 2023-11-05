@@ -1,0 +1,37 @@
+GAMEPLAN:
+
+Make a working deck first, then
+Implement the BlackJack game, then
+Implement the client and server, allowing client to play BlackJack through sending commands, then
+Implement the AI for the BlackJack game.
+
+Files for this:
+Card.java (object of a card)
+Deck.java (object of a deck, includes suits, rank, value AND shuffling & drawing etc)
+BlackJack.java (logic for the game of blackjack, how card is valued, how to deal the card, how to compare the value) **Deal with Ace logic
+BlackJackServer.java (instance of a server, only handle IO from client, no logic here)
+BlackJackClient.java (instance of a client, only send out a set of commands and receive certain outputs)
+DealerAI.java (contains the logic for dealer AI, decisions for drawing more card or not)
+
+Potential logic for DealerAI:
+
+Way 1:
+IF client has 2 cards:
+    IF value <= 15 - must draw a card,
+    ELSE IF value <= 16 - 50% chance to draw a card,
+    ELSE IF value <= 17 - 30% chance to draw a card,
+    ELSE IF value <= 18 - 10% chance to draw a card,
+
+IF client has 3 cards:
+    IF value <= 15 - must draw a card,
+    ELSE IF value <= 16 - 40% chance to draw a card,
+    ELSE IF value <= 17 - 30% chance to draw a card,
+    ELSE IF value <= 18 - 10% chance to draw a card,
+
+IF client has 4 cards:
+    IF value <= 15 - must draw a card,
+    ELSE IF value <= 16 - 20% chance to draw a card,
+    ELSE IF value <= 17 - 10% chance to draw a card,
+
+Way 2:
+Dealer will just draw until 17 lol
