@@ -4,93 +4,146 @@ import java.util.*;
 
 public class Blackjack {
     private Deck deck;
-    private List<Card> dealerHand;
-    private List<Card> playerHand;
+    private Dealer dealer;
+    private Player player;
+    Scanner scanner = new Scanner(System.in);
+
+    public void playGame() {
+        String input; 
+        do {
+            startGame();
+            System.out.println("Do you want to start another game? (y/n)");
+
+            while (true) { 
+                input = scanner.nextLine().trim().toLowerCase();
+                if (input.equals("y") || input.equals("n")) {
+                    break;
+                } else {
+                    System.out.println("Invalid input. Please enter 'y' for yes or 'n' for no.");
+                }
+            }
+        } while (input.equals("y"));
+
+        System.out.println("Thank you for playing!");
+        scanner.close();
+    }
     
     private void startGame() {
+        System.out.println("Starting a new game...");
         deck = new Deck();
         deck.shuffleDeck();
 
-        dealerHand = new ArrayList<>();
-        playerHand = new ArrayList<>();
+        dealer = new Dealer();
+        player = new Player();
 
-        try (Scanner scanner = new Scanner(System.in)){
-            dealInitial();
-            evaluateHand(playerHand);
-            playerTurn(scanner);
-        }
+        dealInitial();
+        playerTurn();
+        dealerTurn();
     } 
-    
-
-    private Integer getValue(List<Card> hand) {
-        Integer sum = 0;
-        Integer aceCount = 0;
-        for (Card card : hand) {
-            sum += card.getValue();
-            if (card.getRank().equals("A")) {
-                aceCount++;
-            }
-        }
-        // Using while rather than if here as need to constantly check for over 21
-        while (sum > 21 && aceCount > 0) {
-            sum -= 10;
-            aceCount--;
-        }
-        return sum;
-    }
 
     // If more players, can place all players into a list and loop through
     private void dealInitial() {
-        playerHand.add(deck.drawCard());
-        dealerHand.add(deck.drawCard());
-        playerHand.add(deck.drawCard());
-        dealerHand.add(deck.drawCard());
-    }
-
-    private boolean isBlackjack(List<Card> hand) {
-        return getValue(hand) == 21 && hand.size() == 2;
+        player.addToHand(deck.drawCard());
+        dealer.addToHand(deck.drawCard());
+        player.addToHand(deck.drawCard());
+        dealer.addToHand(deck.drawCard());
     }
 
     private void evaluateHand(List<Card> hand) {
-        System.out.println("Your hand: " + playerHand + "\nTotal value: " + getValue(playerHand));
-        if (isBlackjack(playerHand)) {
-            System.out.println("BOOM! BLACKJACK!!!");
-        } else {
-            System.out.println("Do you want to hit or stand?");
-        }
+        System.out.println("Your hand: " + player.getHand() + "\nTotal value: " + player.getValue(hand));
     }
 
-    private void playerTurn(Scanner scanner) {
+    private void playerTurn() {
+        evaluateHand(player.getHand());
+        if (player.isBlackjack(player.getHand())) {
+            handleBlackJack();
+        } else {
+            handlePlayerAction();
+        }     
+    }
+
+    private void handleBlackJack() {
+        System.out.println("BOOM! BLACKJACK!!! YOU WON!!\n");
+        System.out.println("Do you want to start another game? (y/n)");
+        playGame();        
+    }
+
+    private void handlePlayerAction() {
         while (true) {
-            System.out.println("Do you want to hit or stand? (h/s): ");
-            String playerChoice = scanner.nextLine().trim().toLowerCase();
-            if ("h".equals(playerChoice)) {
-                playerHand.add(deck.drawCard());
-                evaluateHand(playerHand);
-                if (getValue(playerHand) > 21) {
-                    System.out.println("Bust! Game over.");
+            Integer playerHandValue = player.getValue(player.getHand());
+            if (playerHandValue < 16) {
+                System.out.println("Insufficient value (" + playerHandValue + "), type 'h' to draw a card or 's' to stand.");
+            } else if (playerHandValue >= 16 && playerHandValue <= 21) {
+                System.out.println("Do you want to hit or stand? (h/s)");
+            }
+    
+            String input = scanner.nextLine().trim().toLowerCase();
+            switch (input) {
+                case "h":
+                    player.addToHand(deck.drawCard());
+                    System.out.println("Drawing another card...");
+                    evaluateHand(player.getHand());
+    
+                    if (player.getValue(player.getHand()) > 21) {
+                        System.out.println("BUSTTT!! GAME OVER!");
+                        return;
+                    }
                     break;
-                }
-            } else if ("s".equals(playerChoice)) {
-                System.out.println("You stand with: " + getValue(playerHand));
-                dealerTurn();
-                break;
-            } else {
-                System.out.println("Invalid input, please try again.");
+                case "s":
+                    System.out.println("You chose to stand with " + playerHandValue + ".");
+                    return;
+                default:
+                    System.out.println("Invalid input. Please enter 'h' to hit, or 's' to stand.");
+                    break;
             }
         }
     }
 
+    // COMPARE PLAYER AND DEALER HAND TO DETERMINE WINNER
     private void dealerTurn() {
-        System.out.println(getValue(dealerHand));
-    }
-    
 
-    // Maybe can implement a method for printing player hand to remove the [ ]
+        if (player.getValue(player.getHand()) > 21) {
+            return;
+        } else {
+            System.out.println("Dealer's Hand: " + dealer.getHand() + "\nValue: " + dealer.getValue(dealer.getHand()));
+            if (dealer.isBlackjack(dealer.getHand())) {
+                System.out.println("Dealer has the Blackjack, you lost!");
+                return;
+            } 
+
+            while (dealer.getValue(dealer.getHand()) < 17) {
+                System.out.println("Dealer currently has " + dealer.getValue(dealer.getHand()) + " and hits");
+                dealer.addToHand(deck.drawCard());
+                System.out.println("Dealer's hand is now: " + dealer.getHand() + "\nTotal value: " + dealer.getValue(dealer.getHand()));
+            }
+
+            if (dealer.getValue(dealer.getHand()) > 21) {
+                System.out.println("Dealer BUST! You won!");
+            }
+
+            System.out.println("Dealer stands with a total of " + dealer.getValue(dealer.getHand()));
+            compareHands();
+        }      
+    }
+
+    private void compareHands() {
+        Integer playerValue = player.getValue(player.getHand());
+        Integer dealerValue = dealer.getValue(dealer.getHand());
+
+        System.out.println("Player's final hand: " + player.getHand() + " (value: " + playerValue + ")");
+        System.out.println("Dealer's final hand: " + dealer.getHand() + " (value: " + dealerValue + ")");
+
+        if (playerValue > dealerValue) {
+            System.out.println("Congratulations! You won!");
+        } else if (playerValue < dealerValue) {
+            System.out.println("Dealer wins. Better luck next time!");
+        } else {
+            System.out.println("It's a tie!");
+        }
+    }
 
     public static void main(String[] args) {
-
-        Blackjack pog = new Blackjack();
-        pog.startGame();
+        Blackjack newGame = new Blackjack();
+        newGame.playGame();
     }        
 }
